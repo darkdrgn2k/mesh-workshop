@@ -2,7 +2,7 @@ Mesh Workshop
 =============
 
 [![Generic badge](https://img.shields.io/badge/Workshop_time-2_hours-1f73e0.svg)](https://github.com/benhylau/mesh-workshop)
-[![Generic badge](https://img.shields.io/badge/Martix_chat-%23tomesh:tomesh.net-666666.svg)](https://chat.tomesh.net/#/room/#tomesh:tomesh.net)
+[![Generic badge](https://img.shields.io/badge/Matrix_chat-%23tomesh:tomesh.net-666666.svg)](https://chat.tomesh.net/#/room/#tomesh:tomesh.net)
 [![Generic badge](https://img.shields.io/badge/IRC-freenode%2F%23tomesh-666666.svg)](https://webchat.freenode.net/?channels=tomesh)
 
 This repository describes nodes used to facilitate workshops and demos for mesh networking. The nodes boot with multiple zero-configuration technologies such as mDNS and self-addressing auto-peering mesh protocols to eliminate initial set up time. An autonomous network is formed upon power-on and nodes can address each other over `<hostname>.local` addresses.
@@ -18,7 +18,7 @@ Hardware
 Each node consists of one:
 
 * Raspberry Pi 3
-* [USB WiFi adapter](https://github.com/phillymesh/802.11s-adapters/blob/master/README.md) with `ath9k_htc`, `rt2800usb`, or `rtl8192cu` driver
+* [USB WiFi adapter](https://github.com/phillymesh/802.11s-adapters/blob/master/README.md) with `rt2800usb`, `ath9k_htc`, or `rtl8192cu` driver
 * SD card with 8 GB or more space
 
 Other accessories:
@@ -27,23 +27,27 @@ Other accessories:
 * Ethernet cables
 * A network switch may come in handy
 
+_You may optionally use a Raspberry Pi 2 instead of a Raspberry Pi 3. In that case, you should have one `rt2800usb` adapter (for mesh point) and one `ath9k_htc` or `rtl8192cu` adapter (for access point). The configuration scripts will by default detect Raspberry Pi 2 hardware and configure these interfaces as described._
+
 
 Software
 --------
 
-You need a recent release of [mesh-orange](https://github.com/tomeshnet/mesh-orange) built using [mesh-router-builder](https://github.com/benhylau/mesh-router-builder), where the [cjdns](https://github.com/cjdelisle/cjdns) and [yggdrasil](https://github.com/Arceliar/yggdrasil-go/) mesh routers are pre-installed along with other tools required for this workshop. You can download from [**mesh-router-builder/releases**](https://github.com/benhylau/mesh-router-builder/releases) a recent `raspberrypi3-<version>.img`.
+1. Download the [latest mesh-orange release](https://github.com/benhylau/mesh-router-builder/releases/latest) of `raspberrypi3-<version>_default.img`, then flash the image onto an SD card with a tool like [Etcher](https://etcher.io).
 
-Now you can clone this repository and run `./build` to generate 40 unique host configurations under `output/`, or download the ones I built from [**mesh-workshop/releases**](https://github.com/benhylau/mesh-workshop/releases). The 40 configurations are packaged as `confd-<version>.tar.gz` and `confd-<version>.zip`, so you just need to extract the archives to find all of them.
+2. Download the [latest mesh-workshop release](https://github.com/benhylau/mesh-workshop/releases/latest) and unpack it. Mount the FAT partition of the SD card you flashed in the previous step, then use the tool `mesh-workshop` to install workshop files on each node:
 
-Once you have both the mesh-orange image and per-node host configurations, simply flash the downloaded image onto an SD card with a tool like [Etcher](https://etcher.io), mount its FAT partition to your computer, then copy from `output/conf.d/<hostname>/*` to the `conf.d/` on the SD card root. For example, on Mac OS:
+		$ ./mesh-workshop
+		Usage:   mesh-workshop confpath nodename
+		Example: mesh-workshop /Volumes/BOOT/conf.d/ bloor
 
-	$ cp output/conf.d/bloor/* /Volumes/BOOT/conf.d/
-
-Now you have configured the node with hostname `bloor`.
+	The example shows a path to your SD card on Mac OS, your local path may differ. The command installs node profile and workshop files to the SD card `conf.d` for the node with hostname `bloor`.
 
 
 What does it do?
 ----------------
+
+Power on the Raspberry Pi 3 and wait for a solid green LED with a flashing red LED. Now your node is ready.
 
 ### 1. Connect to Access Point
 
@@ -201,17 +205,16 @@ If `bloor` is listening, `college` can send a plaintext message with:
 
 	root@college:~# nc bloor.local 80
 
-You can also run a minimal webserver that can respond to HTTP messages sent via `curl`:
+You can also run a minimal webserver that can respond to HTTP messages. Look at the script `start-webserver.sh` and run it:
 
-	root@bloor:~# while true; do { echo -e 'HTTP/1.1 200 OK\r\n'; echo -e "You have reached $(cat /etc/hostname) on $(date)"; } | nc -l -p 80; done
+	root@bloor:~# cat ~/scripts/start-webserver.sh
+	root@bloor:~# sh ~/scripts/start-webserver.sh
 
 Then on `college`:
 
 	root@college:~# curl bloor.local
 
-Observe the response from the webserver. When you are ready to move on, `bloor` can stop the webserver with `Ctrl + Z` followed by:
-
-    root@bloor:~# ps aux | grep '[nc] -l -p 80' | awk '{ print $2 }' | xargs -n 1 kill -9
+Observe the response from the webserver. When you are ready to move on, hit `Ctrl + C` to stop the server.
 
 
 ### 8. Make wired ethernet link and assign route with `ip`
@@ -287,8 +290,8 @@ In this example, we will run [ipfs](https://github.com/ipfs/go-ipfs) using the [
 
 Now we have a tar archive of the docker image called `tomeshnet-ipfs-0.1.tar`. Copy the docker image archive to your computer, then put it in `conf.d/docker/` on the SD card root of each node you are preparing. For example, on Mac OS:
 
-	$ mkdir /Volumes/BOOT/conf.d/docker
-	$ cp tomeshnet-ipfs-0.1.tar /Volumes/BOOT/conf.d/docker/
+	$ mkdir /Volumes/BOOT/conf.d/home/docker
+	$ cp tomeshnet-ipfs-0.1.tar /Volumes/BOOT/conf.d/home/docker/
 
 This `docker` folder will be copied to the user home when the node starts.
 
